@@ -1,105 +1,215 @@
-# REVERS INGINEERING
+# REVERSE ENGINEERING
 
-## Structure USB très probable de la KS-959  
-Un périphérique USB expose une hiérarchie standard :  
-Device  
- └─ Configuration  
-     └─ Interface  
-         ├─ Endpoint  
-         ├─ Endpoint  
-         └─ Endpoint  
-		 
-Pour un adaptateur IrDA USB classique, on obtient généralement :  
-USB Device  
-│  
-├─ Device Descriptor  
-│   VID: 07D0  
-│   PID: 4959  
-│   Class: FF (Vendor Specific)  
-│  
-└─ Configuration 1  
-     │  
-     └─ Interface 0  
-         Class: FF (Vendor specific)  
-         Subclass: 00  
-         Protocol: 00  
-		 
-Le point important :  
-	Class = FF  
+# KS-959 Reverse Engineering Plan
 
-Cela signifie que le périphérique n'utilise aucune classe USB standard.  
-Donc :  
-- pas CDC  
-- pas HID  
-- pas USB IrDA bridge standard  
+This document describes the strategy used to reverse engineer the USB protocol of the **KS-959 USB IrDA adapter (VID_07D0 / PID_4959)**.
 
-👉 le protocole est 100 % propriétaire.  
+The objective is to document the device protocol and provide a modern open source driver stack for Windows x64 using WinUSB.
 
-## Endpoints très probables  
-Presque toutes les clés IrDA USB utilisent ce schéma :  
-- Endpoint 0  (CONTROL)  
-- Endpoint 1  (BULK OUT)  
-- Endpoint 2  (BULK IN)  
-soit :  
-- EP0  control  
-- EP1  OUT  -> envoyer trames IR  
-- EP2  IN   <- recevoir trames IR  
+---
 
-Configuration probable :  
-- Endpoint 0x01  BULK OUT  
-- Endpoint 0x81  BULK IN  
-ou parfois :  
-- 0x02  BULK OUT  
-- 0x82  BULK IN  
+# Goals
 
-Schéma typique :  
+The reverse engineering effort aims to determine:
 
-PC  
- │  
- │  BULK OUT  
- ▼  
-USB → KS959 → IR LED  
-                 ↓  
-             air  
-                 ↑  
-USB ← KS959 ← IR photodiode  
- ▲  
- │ BULK IN  
- │  
-PC
-  
-## Ce qui circule probablement dans ces endpoints  
-Les trames IrDA ne sont généralement pas envoyées directement.  
-La clé encapsule souvent :  
-	[COMMAND][LEN][DATA][CHECKSUM]  
-exemple :  
-	01 05 12 34 56 78 9A  
-où :  
-	01  = SEND_FRAME  
-	05  = length  
-	data = IR payload  
-et pour recevoir :  
-	82 04 11 22 33 44  
+* device initialization sequence
+* vendor-specific control requests
+* IR transmission commands
+* IR reception data format
+* status / event messages
 
-## Séquence d'initialisation probable  
-Quand le driver démarre, il fait généralement :  
+Ultimately this will allow implementation of a userspace library:
 
-- CONTROL TRANSFER  
-- SET_MODE  
-- CONTROL TRANSFER  
-- SET_SPEED  
-- CONTROL TRANSFER  
-- ENABLE_RX  
-par exemple :  
-- SET_BAUD 9600  
-- SET_BAUD 115200  
--SET_BAUD 4Mbps (IrDA SIR/FIR)  
+```
+libks959
+```
 
-#🚀 Le truc vraiment intéressant  
-Si on comprend le protocole KS959, on peut faire beaucoup plus que l'ancien driver.  
+with functions such as:
 
-Par exemple :  
-- sniffer IrDA  
-- émuler IrDA  
-- bridge TCP ↔ IrDA  
-- passerelle ESP32  
+```
+ks959_open()
+ks959_send_frame()
+ks959_receive_frame()
+ks959_set_speed()
+```
+
+---
+
+# Known USB architecture
+
+Based on USB descriptor analysis:
+
+| Element          | Value                   |
+| ---------------- | ----------------------- |
+| Interface class  | Vendor specific (0xFF)  |
+| Endpoints        | 1 interrupt IN endpoint |
+| Endpoint address | 0x81                    |
+| Packet size      | 8 bytes                 |
+| Control endpoint | EP0                     |
+
+This strongly suggests that:
+
+* commands are sent using **vendor control transfers**
+* events and received data are returned through **interrupt endpoint 0x81**
+
+---
+
+# Reverse engineering strategy
+
+The reverse engineering process consists of four stages.
+
+---
+
+# Stage 1 — Capture USB traffic
+
+The first step is to observe the behavior of the **original driver**.
+
+Recommended setup:
+
+* Windows XP or Windows 7 (32-bit)
+* original KS-959 driver
+* USB capture tool
+
+Recommended capture tools:
+
+* USBPcap
+* Wireshark
+* USBlyzer (optional)
+
+Capture scenarios:
+
+1. device plug-in
+2. driver initialization
+3. IR transmission
+4. IR reception
+5. device shutdown
+
+The goal is to observe:
+
+```
+Control Transfers
+Interrupt IN transfers
+```
+
+---
+
+# Stage 2 — Identify command structure
+
+Typical vendor protocols use a simple message format such as:
+
+```
+[CMD][LEN][DATA][CHECKSUM]
+```
+
+or
+
+```
+[CMD][PARAM1][PARAM2]
+```
+
+Things to identify:
+
+* command IDs
+* payload structure
+* response format
+* timing requirements
+
+---
+
+# Stage 3 — Map protocol operations
+
+Once commands are identified, map them to logical operations.
+
+Example mapping:
+
+| Operation           | USB command      |
+| ------------------- | ---------------- |
+| Initialize device   | CMD_INIT         |
+| Set IR speed        | CMD_SET_SPEED    |
+| Send frame          | CMD_TX           |
+| Enable receiver     | CMD_RX_ENABLE    |
+| Read received frame | interrupt packet |
+
+---
+
+# Stage 4 — Implement prototype driver
+
+Using WinUSB, implement a minimal prototype:
+
+```
+open device
+send control request
+read interrupt endpoint
+```
+
+Example architecture:
+
+```
+Application
+     │
+libks959
+     │
+WinUSB
+     │
+KS-959 USB device
+```
+
+Prototype tools may include:
+
+```
+ks959-monitor
+ks959-terminal
+ks959-dump
+```
+
+---
+
+# Expected protocol characteristics
+
+Given the device descriptors:
+
+* packets likely limited to **8 bytes**
+* interrupt endpoint used for events
+* commands probably transmitted through **control transfers**
+
+This suggests a relatively simple protocol.
+
+---
+
+# Documentation policy
+
+All discoveries should be documented in:
+
+```
+docs/protocol-notes.md
+```
+
+Each command should include:
+
+* request type
+* request code
+* value
+* index
+* payload
+* expected response
+
+---
+
+# Legal considerations
+
+The reverse engineering process focuses on **observing USB traffic and documenting device behavior**.
+
+No proprietary driver code is copied or redistributed.
+
+This approach is compatible with most open source licensing policies.
+
+---
+
+# Future work
+
+Once the protocol is documented:
+
+1. implement full `libks959`
+2. create command-line tools
+3. provide Python bindings
+4. support additional operating systems (Linux, macOS)
