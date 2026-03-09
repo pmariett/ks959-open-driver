@@ -1,0 +1,25 @@
+[Version]
+Signature   = "$Windows NT$"
+Class       = USBDevice
+ClassGuid   = {88BAE032-5A81-49F0-BC3D-A4FF138216D6}
+Provider    = %ManufacturerName%
+DriverVer   = 03/09/2026,1.0.0.0
+CatalogFile = ks959.cat
+
+[Manufacturer]
+%ManufacturerName% = DeviceList,NTamd64
+
+[DeviceList.NTamd64]
+%DeviceName% = Install,USB\VID_07D0&PID_4959
+
+[Install]
+Include=winusb.inf
+Needs=WINUSB.NT
+
+[Install.Services]
+Include=winusb.inf
+Needs=WINUSB.NT.Services
+
+[Strings]
+ManufacturerName = "Kingsun"
+DeviceName       = "KS-959 USB IrDA Adapter (WinUSB)"
