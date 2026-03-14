@@ -29,14 +29,16 @@ extern "C" {
 #define KS959_REQTYPE_OUT_CLASS_IFACE 0x21u
 #define KS959_REQTYPE_IN_CLASS_IFACE  0xA1u
 
-#define KS959_REQ_RECV 0x01u
-#define KS959_REQ_SEND 0x09u
+#define KS959_REQ_RX_POLL  0x01u
+#define KS959_REQ_OUT_8    0x09u
 
-#define KS959_RX_WVALUE 0x0200u
-#define KS959_RX_WINDEX 0x0000u
+#define KS959_RX_WVALUE    0x0200u
+#define KS959_RX_WINDEX    0x0000u
 
 #define KS959_SPEED_WVALUE 0x0200u
 #define KS959_SPEED_WINDEX 0x0001u
+
+#define KS959_OUT8_WINDEX  0x0000u
 
 /* --------------------------------------------------------------------------
  * Buffer and fragment sizing
@@ -84,13 +86,12 @@ extern "C" {
 /* --------------------------------------------------------------------------
  * Packed payloads
  * -------------------------------------------------------------------------- */
-
 #pragma pack(push, 1)
-typedef struct ks959_speed_params {
-    uint32_t baudrate_le;
-    uint8_t  flags;
+typedef struct ks959_out8_payload {
+    uint32_t param0_le;
+    uint8_t  param1;
     uint8_t  reserved[3];
-} ks959_speed_params_t;
+} ks959_out8_payload_t;
 #pragma pack(pop)
 
 /* --------------------------------------------------------------------------
@@ -120,7 +121,7 @@ void ks959_proto_build_tx_setup(ks959_setup_packet_t *setup,
  * Speed payload helper
  * -------------------------------------------------------------------------- */
 
-void ks959_proto_fill_speed_params(ks959_speed_params_t *params,
+void ks959_proto_fill_speed_params(ks959_out8_payload_t *params,
                                    uint32_t baudrate,
                                    uint8_t flags);
 

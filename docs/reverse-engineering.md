@@ -170,6 +170,56 @@ Priority files for the next step:
     libks959/ks959_proto.h
     libks959/ks959_proto.c
 
+## Aladin Prime optical check
+
+Using the Aladin Prime IR detection symbol as an external indicator:
+
+- accepted USB OUT requests did not cause the Aladin Prime IR symbol to appear
+- no meaningful RX activity was observed in parallel
+- therefore current TX payload probes are not sufficient to trigger visible IR emission from the KS-959
+
+Implication:
+- USB acceptance alone does not mean the dongle is actually transmitting
+- next step must focus on Linux-model TX framing, not arbitrary probe payloads
+
+## Test target uncertainty
+
+Current validation attempts rely on an Aladin Prime unit whose IR functionality
+may itself be faulty.
+
+Observed facts:
+- no IR detection symbol appears on the Aladin Prime during any current tests
+- no convincing protocol response has been observed
+- therefore negative results cannot currently distinguish between:
+  - KS-959 transmit/protocol issues
+  - Aladin Prime IR hardware failure
+  - both
+
+Implication:
+- the Aladin Prime should no longer be treated as a fully trusted validation target
+  until its IR hardware is independently confirmed
+  
+## TX optical validation
+
+A webcam known to detect IR from a TV remote was used to observe the KS-959 IR window
+during repeated USB OUT tests.
+
+Observed result:
+- TV remote: visible
+- KS-959: no visible IR activity at all
+
+This was reproduced across multiple tools:
+- ks959_tx_probe
+- aladin_handshake_probe
+- ks959_ir_led_finder
+
+Implication:
+- currently tested USB requests are not sufficient to activate observable IR transmission
+- remaining possibilities are:
+  - missing TX init sequence
+  - incorrect TX payload/framing
+  - defective KS-959 transmitter hardware  
+
 ## DOCUMENTATION POLICY
 
 Every confirmed protocol element should document:

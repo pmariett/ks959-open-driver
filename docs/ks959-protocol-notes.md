@@ -111,3 +111,48 @@ High confidence:
 Medium confidence:
 - exact Windows timing / retry behavior
 - exact separation between protocol layer and public API boundaries
+
+
+## Raspberry Pi validation summary
+
+Confirmed on real hardware:
+
+- IN class/interface request `0xA1 / 0x01 / 0x0200 / 0x0000` succeeds and returns zero-length data when idle
+- OUT class/interface request `0x21 / 0x09` with 8-byte payload succeeds when `wIndex = 0x0000`
+- The same request fails with `wIndex = 0x0001`
+- Vendor/interface requests fail with `PIPE`
+- Multiple `wValue` values are accepted
+- Multiple baud/flags payload combinations are accepted
+
+Implication:
+
+- EP0 class/interface transport is confirmed
+- previous `wIndex = 0x0001` hypothesis is rejected for this device
+- the exact meaning of the 8-byte OUT payload remains unknown
+
+## Linux libusb monitor results
+
+Observed on Raspberry Pi:
+
+- RX poll request `0xA1 / 0x01 / 0x0200 / 0x0000` succeeds reliably
+- accepted OUT requests `0x21 / 0x09 / wIndex=0x0000 / len=8` do not yet produce observable RX activity
+- the same monitor remains idle with or without the current pre-init sequence
+
+Implication:
+
+- EP0 transport is confirmed
+- current accepted 8-byte OUT payload is not sufficient to activate visible RX behavior
+- next step is to test with active IR stimulus and broaden the OUT command search
+
+## Raspberry Pi validation update
+
+Observed on real hardware:
+- EP0 RX poll `0xA1 / 0x01 / 0x0200 / 0x0000` succeeds but remains idle
+- EP0 OUT `0x21 / 0x09 / wIndex=0x0000 / len=8` is accepted
+- No RX activity was observed with either a standard IR remote or an Aladin Prime
+- Linux comment-based model is therefore only partially confirmed
+
+Implication:
+- USB transport assumptions are stronger than before
+- functional RX arming sequence is still unknown
+- endpoint 0x81 should now be tested experimentally despite Linux comments
