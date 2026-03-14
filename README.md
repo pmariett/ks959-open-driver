@@ -36,14 +36,15 @@ ks959-open-driver
 │   ├─ ks959-terminal  
 │   └─ ks959-dump  
 │  
-└─ docs/  
-    ├─ usb-protocol.md  
-    ├─ some_stories.md  
-    ├─ usb-architecture.md  
-    ├─ ks959-protocol-model.md 	 
-    ├─ ks959-protocol-notes.md  
-    ├─ reverse-engineering.md  
-    └─ hardware-notes.md  
- 
+├─ docs/  
+│   ├─ usb-protocol.md  
+│   ├─ some_stories.md  
+│   ├─ usb-architecture.md  
+│   ├─ ks959-protocol-model.md  
+│   ├─ ks959-protocol-notes.md  
+│   ├─ reverse-engineering.md  
+│   └─ hardware-notes.md  
+│   
+└─ to be continued :)  
 
 ---
