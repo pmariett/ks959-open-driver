@@ -27,20 +27,23 @@ ks959-open-driver
 ├─ libks959/  
 │   ├─ ks959.c  
 │   ├─ ks959.h  
-│   └─ protocol.c  
+│   ├─ ks959_proto.c  
+│   ├─ ks959_proto.h  
+│   └─ ks959_device.c  
 │  
 ├─ tools/  
 │   ├─ ks959-monitor  
 │   ├─ ks959-terminal  
 │   └─ ks959-dump  
-│ 
-├─ docs/  
-│   ├─ usb-protocol.md  
-│   ├─ reverse-engineering.md  
-│   └─ hardware-notes.md  
 │  
-└─ examples/  
-    ├─ python  
-    └─ c  
+└─ docs/  
+    ├─ usb-protocol.md  
+    ├─ some_stories.md  
+    ├─ usb-architecture.md  
+    ├─ ks959-protocol-model.md 	 
+    ├─ ks959-protocol-notes.md  
+    ├─ reverse-engineering.md  
+    └─ hardware-notes.md  
+ 
 
 ---
